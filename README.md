@@ -90,6 +90,7 @@ Unpatch instrumentations
 ## Instrumentations
 
 - [http, https](https://nodejs.org/api/http.html)
+- [bay](https://github.com/shimohq/bay)
 - [koa1, koa2](http://koajs.com/)
 - [express](https://expressjs.com/)
 - [restify](http://restify.com/)

@@ -1,6 +1,6 @@
 {
   "name": "shimo-opentracing-auto",
-  "version": "1.6.2",
+  "version": "1.7.2",
   "description": "Out of the box OpenTracing instrumentation for Node.js",
   "main": "src/index.js",
   "scripts": {
@@ -27,6 +27,7 @@
     "tracing"
   ],
   "dependencies": {
+    "bay": "^0.5.2",
     "cls-hooked": "4.2.2",
     "co": "^4.6.0",
     "debug": "3.1.0",

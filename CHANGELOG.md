@@ -1,3 +1,11 @@
+<a name="1.7.2"></a>
+### 1.7.2 (2018-02-06)
+
+
+#### Features
+
+* **instrumentation:** support bay framework
+
 <a name="1.6.2"></a>
 ### 1.6.2 (2018-02-06)
 
