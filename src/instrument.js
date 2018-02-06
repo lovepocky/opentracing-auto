@@ -57,7 +57,7 @@ class Instrument {
     const enablesInstruments = this._options.enables
     // Use all if not specify
     if (enablesInstruments && enablesInstruments.length) {
-      instrumentations = instrumentations.filter((instrument) => enablesInstruments.indexOf(instrument) !== -1)
+      instrumentations = instrumentations.filter((instrument) => enablesInstruments.indexOf(instrument.module) !== -1)
     }
 
     const instrumentedModules = _.uniq(instrumentations.map((instrumentation) => instrumentation.module))
