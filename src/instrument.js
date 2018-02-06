@@ -54,9 +54,10 @@ class Instrument {
   * @method patch
   */
   patch () {
+    const enablesInstruments = this._options.enables
     // Use all if not specify
-    if (this._options.enables && this._options.enables.length) {
-      instrumentations = _.pick(instrumentations, this._options.enables)
+    if (enablesInstruments && enablesInstruments.length) {
+      instrumentations = instrumentations.filter((instrument) => enablesInstruments.indexOf(instrument) !== -1)
     }
 
     const instrumentedModules = _.uniq(instrumentations.map((instrumentation) => instrumentation.module))
