@@ -9,6 +9,7 @@ const pg = require('./pg')
 const redis = require('./redis')
 const restify = require('./restify')
 const koa = require('./koa')
+const bay = require('./bay')
 
 module.exports = [
   express,
@@ -19,5 +20,6 @@ module.exports = [
   pg,
   redis,
   restify,
-  koa
+  koa,
+  bay
 ]
