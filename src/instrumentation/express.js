@@ -43,6 +43,11 @@ function patch (express, tracers) {
         spans.forEach((span) => span.log({ peerRemoteAddress: req.connection.remoteAddress }))
       }
 
+      // Inject first, cause headers may has been sent when response end
+      const headerOptions = {}
+      tracers.forEach((tracer, key) => tracer.inject(spans[key], FORMAT_HTTP_HEADERS, headerOptions))
+      res.set(headerOptions)
+
       // end
       const originalEnd = res.end
 
@@ -70,10 +75,6 @@ function patch (express, tracers) {
         debug(`Operation finished ${OPERATION_NAME}`, {
           [Tags.HTTP_STATUS_CODE]: res.statusCode
         })
-
-        const headerOptions = {}
-        tracers.forEach((tracer, key) => tracer.inject(spans[key], FORMAT_HTTP_HEADERS, headerOptions))
-        res.set(headerOptions)
 
         return returned
       }
