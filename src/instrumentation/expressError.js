@@ -32,7 +32,7 @@ function patch (express, tracers) {
           const rootSpans = tracers.map((tracer) => cls.getRootSpan(tracer))
 
           if (rootSpans.length) {
-            rootSpans.forEach((rootSpan) => rootSpan.setTag(Tags.ERROR, true))
+            rootSpans.forEach((rootSpan) => rootSpan && rootSpan.setTag(Tags.ERROR, true))
           }
 
           // error span

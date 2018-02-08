@@ -45,6 +45,10 @@ function patch (koa, tracers) {
         spans.forEach((span) => span.log({ peerRemoteAddress: self.request.socket.remoteAddress }))
       }
 
+      const headerOptions = {}
+      tracers.forEach((tracer, key) => tracer.inject(spans[key], FORMAT_HTTP_HEADERS, headerOptions))
+      self.set(headerOptions)
+
       yield next
 
       // end
@@ -61,10 +65,6 @@ function patch (koa, tracers) {
       }
 
       spans.forEach((span) => span.finish())
-
-      const headerOptions = {}
-      tracers.forEach((tracer, key) => tracer.inject(spans[key], FORMAT_HTTP_HEADERS, headerOptions))
-      self.set(headerOptions)
 
       debug(`Operation finished ${OPERATION_NAME}`, {
         [Tags.HTTP_STATUS_CODE]: self.status
