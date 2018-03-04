@@ -21,66 +21,68 @@ function patch (express, tracers) {
   }
 
   function middleware (req, res, next) {
-    return cls.runAndReturn(() => {
-      // start
-      const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`
-      const parentSpanContexts = tracers.map((tracer) => tracer.extract(FORMAT_HTTP_HEADERS, req.headers))
-      const spans = parentSpanContexts.map((parentSpanContext, key) =>
-        cls.startRootSpan(tracers[key], OPERATION_NAME, {
-          childOf: parentSpanContext,
-          tags: {
-            [Tags.SPAN_KIND]: Tags.SPAN_KIND_RPC_SERVER,
-            [Tags.HTTP_URL]: url,
-            [Tags.HTTP_METHOD]: req.method
-          }
-        }))
-      debug(`Operation started ${OPERATION_NAME}`, {
-        [Tags.HTTP_URL]: url,
-        [Tags.HTTP_METHOD]: req.method
+    const clsContext = cls.createContext()
+    cls.enter(clsContext)
+
+    const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`
+    const parentSpanContexts = tracers.map((tracer) => tracer.extract(FORMAT_HTTP_HEADERS, req.headers))
+    const spans = parentSpanContexts.map((parentSpanContext, key) =>
+      cls.startRootSpan(tracers[key], OPERATION_NAME, {
+        childOf: parentSpanContext,
+        tags: {
+          [Tags.SPAN_KIND]: Tags.SPAN_KIND_RPC_SERVER,
+          [Tags.HTTP_URL]: url,
+          [Tags.HTTP_METHOD]: req.method
+        }
+      }))
+    debug(`Operation started ${OPERATION_NAME}`, {
+      [Tags.HTTP_URL]: url,
+      [Tags.HTTP_METHOD]: req.method
+    })
+
+    if (req.connection.remoteAddress) {
+      spans.forEach((span) => span.log({ peerRemoteAddress: req.connection.remoteAddress }))
+    }
+
+    // Inject first, cause headers may has been sent when response end
+    const headerOptions = {}
+    tracers.forEach((tracer, key) => tracer.inject(spans[key], FORMAT_HTTP_HEADERS, headerOptions))
+    res.set(headerOptions)
+
+    // end
+    const originalEnd = res.end
+
+    res.end = function (...args) {
+      res.end = originalEnd
+      const returned = res.end.call(this, ...args)
+
+      if (req.route && req.route.path) {
+        spans.forEach((span) => span.setTag(TAG_REQUEST_PATH, req.route.path))
+      }
+
+      spans.forEach((span) => span.setTag(Tags.HTTP_STATUS_CODE, res.statusCode))
+
+      if (res.statusCode >= 400) {
+        spans.forEach((span) => span.setTag(Tags.ERROR, true))
+
+        debug(`Operation error captured ${OPERATION_NAME}`, {
+          reason: 'Bad status code',
+          statusCode: res.statusCode
+        })
+      }
+
+      spans.forEach((span) => span.finish())
+
+      debug(`Operation finished ${OPERATION_NAME}`, {
+        [Tags.HTTP_STATUS_CODE]: res.statusCode
       })
 
-      if (req.connection.remoteAddress) {
-        spans.forEach((span) => span.log({ peerRemoteAddress: req.connection.remoteAddress }))
-      }
+      cls.exit(clsContext)
 
-      // Inject first, cause headers may has been sent when response end
-      const headerOptions = {}
-      tracers.forEach((tracer, key) => tracer.inject(spans[key], FORMAT_HTTP_HEADERS, headerOptions))
-      res.set(headerOptions)
+      return returned
+    }
 
-      // end
-      const originalEnd = res.end
-
-      res.end = function (...args) {
-        res.end = originalEnd
-        const returned = res.end.call(this, ...args)
-
-        if (req.route && req.route.path) {
-          spans.forEach((span) => span.setTag(TAG_REQUEST_PATH, req.route.path))
-        }
-
-        spans.forEach((span) => span.setTag(Tags.HTTP_STATUS_CODE, res.statusCode))
-
-        if (res.statusCode >= 400) {
-          spans.forEach((span) => span.setTag(Tags.ERROR, true))
-
-          debug(`Operation error captured ${OPERATION_NAME}`, {
-            reason: 'Bad status code',
-            statusCode: res.statusCode
-          })
-        }
-
-        spans.forEach((span) => span.finish())
-
-        debug(`Operation finished ${OPERATION_NAME}`, {
-          [Tags.HTTP_STATUS_CODE]: res.statusCode
-        })
-
-        return returned
-      }
-
-      return next()
-    })
+    return next()
   }
 
   METHODS.forEach((method) => {
