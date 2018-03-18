@@ -10,11 +10,13 @@ const redis = require('./redis')
 const restify = require('./restify')
 const koa = require('./koa')
 const bay = require('./bay')
+const httpServer = require('./httpServer')
 
 module.exports = [
   express,
   expressError,
   httpClient,
+  httpServer,
   mongodbCore,
   mysql,
   pg,
