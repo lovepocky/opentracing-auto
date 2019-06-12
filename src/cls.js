@@ -35,7 +35,8 @@ function startRootSpan (tracer, operationName, options) {
     throw new Error('operationName is required')
   }
 
-  let span = getRootSpan(tracer)
+  // let span = getRootSpan(tracer)
+  let span = undefined
 
   if (span) {
     debug('Root span finded')
